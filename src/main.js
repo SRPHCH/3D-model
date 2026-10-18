@@ -652,32 +652,42 @@ for (const side of [-1, 1]) {
   const bandFrames = planeFrames(new THREE.Vector3(0, capY + 0.01, 0), _up, seg(96, 32));
   mesh(sweep(bandFrames, roundedRectSection(0.065, 0.03, 0.012, 0.028), true), mats.capDark, bodyRig);
 
-  // brim: a crescent extruded and tilted down
-  const rIn = bodyR(capY) + 0.03;
-  const shape = new THREE.Shape();
-  const span = 1.38, n = seg(32, 12);
-  for (let i = 0; i <= n; i++) {
-    const a = -span + (i / n) * span * 2;
-    const ro = rIn + 0.33 * Math.pow(Math.cos((a / span) * (Math.PI / 2)), 0.55);
-    const x = Math.sin(a) * ro, z = Math.cos(a) * ro;
-    i === 0 ? shape.moveTo(x, z) : shape.lineTo(x, z);
-  }
-  for (let i = n; i >= 0; i--) {
-    const a = -span + (i / n) * span * 2;
-    shape.lineTo(Math.sin(a) * (rIn - 0.04), Math.cos(a) * (rIn - 0.04));
-  }
-  const brimGeo = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.022, bevelEnabled: true, bevelThickness: 0.014, bevelSize: 0.016, bevelSegments: seg(2, 1), curveSegments: 4,
-  });
-  brimGeo.rotateX(Math.PI / 2);
-  { // curve the visor: sides drop like a real cap
-    const bp = brimGeo.attributes.position;
-    for (let i = 0; i < bp.count; i++) bp.setY(i, bp.getY(i) - 0.28 * bp.getX(i) ** 2);
+  // brim: grown straight out of the band, so it joins the cap with no gap at any angle.
+  // Each angle gets a closed cross-section (top → rounded tip → underside) that starts inside
+  // the crown at band height and droops gently outward; the length tapers to nothing at the sides.
+  {
+    const rRoot = bodyR(capY) - 0.03;           // starts inside the crown, exits through the band
+    const flat = 0.1;                           // root runs level until it has cleared the band
+    const span = 1.45, na = seg(40, 16), nt = seg(8, 4), tip = seg(6, 3);
+    const lenAt = (a) => flat + 0.34 * Math.pow(Math.cos((a / span) * (Math.PI / 2)), 0.6);
+    const topY = (d) => { const e = Math.max(0, d - flat); return capY + 0.022 - 0.2 * e - 0.28 * e * e; };
+    const thick = (d) => 0.032 - 0.012 * Math.min(1, Math.max(0, d - flat) / 0.34);
+    const pos = [], idx = [];
+    let ns = 0;
+    for (let i = 0; i <= na; i++) {
+      const a = -span + (i / na) * span * 2;
+      const L = lenAt(a), sa = Math.sin(a), ca = Math.cos(a);
+      const sec = [];
+      for (let k = 0; k <= nt; k++) { const d = (k / nt) * L; sec.push([d, topY(d)]); }
+      const th = thick(L), yc = topY(L) - th / 2;
+      for (let k = 1; k < tip; k++) { const q = Math.PI / 2 - (k / tip) * Math.PI; sec.push([L + Math.cos(q) * th * 0.6, yc + Math.sin(q) * th / 2]); }
+      for (let k = nt; k >= 0; k--) { const d = (k / nt) * L; sec.push([d, topY(d) - thick(d)]); }
+      ns = sec.length;
+      for (const [d, y] of sec) pos.push(sa * (rRoot + d), y, ca * (rRoot + d));
+    }
+    for (let i = 0; i < na; i++) {
+      for (let j = 0; j < ns; j++) {
+        const j2 = (j + 1) % ns;
+        const a = i * ns + j, b = (i + 1) * ns + j, c = (i + 1) * ns + j2, d = i * ns + j2;
+        idx.push(a, d, b, b, d, c);
+      }
+    }
+    const brimGeo = new THREE.BufferGeometry();
+    brimGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    brimGeo.setIndex(idx);
     brimGeo.computeVertexNormals();
+    mesh(brimGeo, mats.capDark, bodyRig);
   }
-  const brim = mesh(brimGeo, mats.capDark, bodyRig);
-  brim.position.set(0, capY + 0.005, 0);
-  brim.rotation.x = 0.07;
 
   const badgeTex = canvasTex(256, 256, (g, w, h) => drawEmblem(g, w / 2, h / 2, w * 0.46));
   const badge = mesh(
