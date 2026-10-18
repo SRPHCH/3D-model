@@ -10,6 +10,7 @@ const result = await build({
   format: 'esm',
   target: ['es2020'],
   legalComments: 'none',
+  loader: { '.webp': 'dataurl', '.png': 'dataurl' },
   write: false,
 });
 

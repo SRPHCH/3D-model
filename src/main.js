@@ -8,6 +8,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import gepLogoUrl from './assets/gep-logo.webp';
+import schoolLogoUrl from './assets/school-logo.webp';
 
 /* ------------------------------------------------------------------------------------------
  * Quality tiers
@@ -78,7 +80,8 @@ if (Q.env) {
 
 const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 1.08, 0);
+controls.target.set(-0.18, 1.08, 0); // slightly left of centre: the flag flies out on that side
+camera.position.copy(controls.target).add(new THREE.Vector3(0.32, 0.18, 1)); // initial view direction; resize() sets the distance
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.enablePan = false;
@@ -181,35 +184,37 @@ function M(color, o = {}) {
   return m;
 }
 
+// Outfit theme: white + pastel pink
 const C = {
   skin: 0xffdcd2, hand: 0xffd3c8,
-  shirt: 0xe8bd5c, shirtDark: 0xcf9f3f,
-  shorts: 0x7b5636, belt: 0x4a2f1c, gold: 0xf0b93a,
-  scarf: 0xff7b22, sash: 0xe8582f,
-  cap: 0xf7c443, capDark: 0xe0a62a,
-  sock: 0xfbfaf7, boot: 0x6b3d21, sole: 0x3a2416,
-  pack: 0x6f8b3a, packDark: 0x587230, roll: 0xc9573e, strap: 0x4a2f1c,
-  rope: 0xd2ad6e, wood: 0xa8743f, eye: 0x1d1414,
+  shirt: 0xfffafb, shirtDark: 0xffbcd3,
+  shorts: 0xf7a9c7, belt: 0xfffafb, gold: 0xf0bf4a,
+  scarf: 0xffb5cf, sash: 0xf28fb5,
+  cap: 0xfffafb, capDark: 0xffb5cf,
+  sock: 0xfffafb, boot: 0xf3a1c1, sole: 0xfff3f7,
+  pack: 0xffc5d9, packDark: 0xf6a5c3, roll: 0xfffafb, strap: 0xe98aaf,
+  rope: 0xf3e2d4, wood: 0xfff4f7, eye: 0x1d1414,
 };
+const PINK = '#ffbcd3', PINK_DEEP = '#f7a0c1', WHITE = '#fffafb';
 
 const mats = {
   skin: M(C.skin, { rough: 0.5, coat: 0.35, coatRough: 0.45, sheen: 0.4, sheenColor: 0xffc2cc }),
   hand: M(C.hand, { rough: 0.5, coat: 0.35, coatRough: 0.45, sheen: 0.4, sheenColor: 0xffc2cc }),
-  shirt: M(C.shirt, { rough: 0.85, sheen: 0.8, sheenColor: 0xfff1c4 }),
-  shirtDark: M(C.shirtDark, { rough: 0.85, sheen: 0.6, sheenColor: 0xfff1c4 }),
-  shorts: M(C.shorts, { rough: 0.85, sheen: 0.6, sheenColor: 0xd9b48c }),
+  shirt: M(C.shirt, { rough: 0.85, sheen: 0.6, sheenColor: 0xffe4ee }),
+  shirtDark: M(C.shirtDark, { rough: 0.85, sheen: 0.6, sheenColor: 0xffe4ee }),
+  shorts: M(C.shorts, { rough: 0.85, sheen: 0.6, sheenColor: 0xffd6e6 }),
   belt: M(C.belt, { rough: 0.45, coat: 0.3 }),
   gold: M(C.gold, { rough: 0.28, metal: 1, glow: 0x3a2400 }),
-  scarf: M(C.scarf, { rough: 0.8, sheen: 0.9, sheenColor: 0xffd0a0 }),
-  sash: M(C.sash, { rough: 0.8, sheen: 0.9, sheenColor: 0xffb090 }),
-  cap: M(C.cap, { rough: 0.75, sheen: 0.7, sheenColor: 0xfff0b0 }),
-  capDark: M(C.capDark, { rough: 0.75, sheen: 0.5, sheenColor: 0xfff0b0 }),
+  scarf: M(C.scarf, { rough: 0.8, sheen: 0.9, sheenColor: 0xffe0ec }),
+  sash: M(C.sash, { rough: 0.8, sheen: 0.9, sheenColor: 0xffd0e2 }),
+  cap: M(C.cap, { rough: 0.75, sheen: 0.6, sheenColor: 0xffe4ee }),
+  capDark: M(C.capDark, { rough: 0.75, sheen: 0.6, sheenColor: 0xffe4ee }),
   sock: M(C.sock, { rough: 0.9, sheen: 0.6 }),
   boot: M(C.boot, { rough: 0.4, coat: 0.5, coatRough: 0.3 }),
   sole: M(C.sole, { rough: 0.8 }),
-  pack: M(C.pack, { rough: 0.8, sheen: 0.6, sheenColor: 0xd8f0a8 }),
-  packDark: M(C.packDark, { rough: 0.8, sheen: 0.5, sheenColor: 0xd8f0a8 }),
-  roll: M(C.roll, { rough: 0.85, sheen: 0.7, sheenColor: 0xffb0a0 }),
+  pack: M(C.pack, { rough: 0.8, sheen: 0.6, sheenColor: 0xffe4ee }),
+  packDark: M(C.packDark, { rough: 0.8, sheen: 0.5, sheenColor: 0xffe4ee }),
+  roll: M(C.roll, { rough: 0.85, sheen: 0.7, sheenColor: 0xffe4ee }),
   strap: M(C.strap, { rough: 0.5, coat: 0.2 }),
   rope: M(C.rope, { rough: 0.9, sheen: 0.5 }),
   wood: M(C.wood, { rough: 0.55, coat: 0.4 }),
@@ -384,29 +389,40 @@ function canvasTex(w, h, draw) {
   return t;
 }
 
-function drawEmblem(g, cx, cy, R) {
+// Logos are bundled as data URLs; textures are redrawn as soon as the images have decoded.
+function loadImage(src) {
+  const img = new Image();
+  img.src = src;
+  return img;
+}
+const gepLogo = loadImage(gepLogoUrl);
+const schoolLogo = loadImage(schoolLogoUrl);
+
+function imageTex(w, h, img, draw) {
+  const t = canvasTex(w, h, (g) => draw(g, w, h, null));
+  const redraw = () => {
+    const g = t.image.getContext('2d');
+    g.clearRect(0, 0, w, h);
+    draw(g, w, h, img);
+    t.needsUpdate = true;
+  };
+  if (img.complete && img.naturalWidth) redraw(); else img.addEventListener('load', redraw, { once: true });
+  return t;
+}
+
+// Round badge: pink ring, white disc, logo fitted inside the circle.
+function drawLogoBadge(g, cx, cy, R, img) {
   g.save();
   g.translate(cx, cy);
-  g.fillStyle = '#ffffff';
+  g.fillStyle = PINK_DEEP;
   g.beginPath(); g.arc(0, 0, R, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#ff7b22';
-  g.beginPath(); g.arc(0, 0, R * 0.86, 0, Math.PI * 2); g.fill();
-  g.save();
-  g.beginPath(); g.arc(0, 0, R * 0.86, 0, Math.PI * 2); g.clip();
-  g.fillStyle = '#ffe28a'; // sun
-  g.beginPath(); g.arc(R * 0.3, -R * 0.28, R * 0.2, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#2f7d4f'; // mountains
-  g.beginPath();
-  g.moveTo(-R, R * 0.55); g.lineTo(-R * 0.35, -R * 0.25); g.lineTo(0, R * 0.2);
-  g.lineTo(R * 0.35, -R * 0.05); g.lineTo(R, R * 0.55); g.lineTo(R, R); g.lineTo(-R, R);
-  g.fill();
-  g.fillStyle = '#ffffff'; // snow caps
-  g.beginPath();
-  g.moveTo(-R * 0.35, -R * 0.25); g.lineTo(-R * 0.5, -R * 0.02); g.lineTo(-R * 0.36, -R * 0.08);
-  g.lineTo(-R * 0.26, 0); g.lineTo(-R * 0.17, -R * 0.06); g.closePath(); g.fill();
-  g.fillStyle = '#5a3a22'; // trail
-  g.fillRect(-R, R * 0.55, R * 2, R);
-  g.restore();
+  g.fillStyle = '#ffffff';
+  g.beginPath(); g.arc(0, 0, R * 0.88, 0, Math.PI * 2); g.fill();
+  if (img) {
+    g.beginPath(); g.arc(0, 0, R * 0.88, 0, Math.PI * 2); g.clip();
+    const s = R * 0.88 * Math.SQRT2 * 1.06;
+    g.drawImage(img, -s / 2, -s / 2, s, s);
+  }
   g.restore();
 }
 
@@ -539,7 +555,36 @@ const eyes = [];
 }
 
 // --- Shirt, shorts, belt
-mesh(bodyShell(0.6, 1.235, 0.022, 28), mats.shirt, bodyRig);
+{
+  // Shirt print modelled on the team polo: white, with a pastel pink panel and stripes sweeping
+  // diagonally down across the front (mirrored on the back so it meets cleanly at the sides).
+  const Y0 = 0.6, Y1 = 1.235;
+  const t0 = tAt(Y0), t1 = tAt(Y1);
+  const W = tierName === 'low' ? 1024 : 2048, H = W / 8;
+  const tex = canvasTex(W, H, (g) => {
+    const img = g.createImageData(W, H), d = img.data;
+    const pink = [0xff, 0xbc, 0xd3], white = [0xff, 0xfa, 0xfb];
+    const e = (2 * Math.PI * 0.8) / W * 1.2;                 // edge softness ≈ one texel
+    const cov = (x, a, b) => THREE.MathUtils.clamp((x - a) / e + 0.5, 0, 1) * THREE.MathUtils.clamp((b - x) / e + 0.5, 0, 1);
+    const bands = [[-9, -0.13], [-0.1, -0.04], [-0.015, 0.02]];
+    for (let py = 0; py < H; py++) {
+      const Y = yAt(t0 + (1 - (py + 0.5) / H) * (t1 - t0));
+      const line = -0.36 + (Y1 - Y) * 0.95;                  // boundary: upper-left → lower-right
+      for (let px = 0; px < W; px++) {
+        let th = ((px + 0.5) / W - 0.5) * Math.PI * 2;        // 0 = front, + = character's left
+        if (Math.abs(th) > Math.PI / 2) th = Math.sign(th) * (Math.PI - Math.abs(th));
+        const x = th * 0.8 - line;
+        let k = 0;
+        for (const [a, b] of bands) k = Math.max(k, cov(x, a, b));
+        const o = (py * W + px) * 4;
+        for (let c = 0; c < 3; c++) d[o + c] = white[c] + (pink[c] - white[c]) * k;
+        d[o + 3] = 255;
+      }
+    }
+    g.putImageData(img, 0, 0);
+  });
+  mesh(bodyShell(Y0, Y1, 0.022, 28), M(0xffffff, { map: tex, rough: 0.85, sheen: 0.6, sheenColor: 0xffe4ee }), bodyRig);
+}
 mesh(bodyShell(0.18, 0.67, 0.034, 20), mats.shorts, bodyRig);
 {
   const beltFrames = planeFrames(new THREE.Vector3(0, 0.645, 0), _up, seg(96, 32));
@@ -559,7 +604,7 @@ mesh(bodyShell(0.18, 0.67, 0.034, 20), mats.shorts, bodyRig);
 
   const front = frames.filter((f) => Math.abs(f.theta) < 1.05).sort((a, b) => a.theta - b.theta);
   const count = 6;
-  const colors = [0x3a7bd5, 0xffd23f, 0x2bb673, 0xe94b3c, 0x8e5bd6, 0x2ec4d6];
+  const colors = [0x8ec2ff, 0xffd97a, 0x92e0bd, 0xff9fb4, 0xc6a6f5, 0x8fdde6];
   const discGeo = new THREE.CylinderGeometry(1, 1, 1, seg(24, 10)).rotateX(Math.PI / 2);
   const outer = new THREE.InstancedMesh(discGeo, M(0xffffff, { rough: 0.4, coat: 0.6 }), count);
   const inner = new THREE.InstancedMesh(discGeo, M(0xffffff, { rough: 0.35, coat: 0.6 }), count);
@@ -594,19 +639,23 @@ mesh(bodyShell(0.18, 0.67, 0.034, 20), mats.shorts, bodyRig);
   const flap = mesh(flapGeo, mats.scarf, bodyRig);
   placeOnSurface(flap, 0, 1.2, 0.04);
   flap.rotateX(-0.12);
-  const woggle = mesh(new THREE.TorusGeometry(0.035, 0.018, seg(10, 6), seg(20, 10)), mats.wood, bodyRig);
+  const woggle = mesh(new THREE.TorusGeometry(0.035, 0.018, seg(10, 6), seg(20, 10)), mats.gold, bodyRig);
   placeOnSurface(woggle, 0, 1.17, 0.085);
   woggle.scale.set(1, 1.2, 1);
 }
 
 // --- Chest pocket with flap and button
 {
-  const pocket = mesh(rbox(0.2, 0.17, 0.03, 2, 0.012), mats.shirt, bodyRig);
-  placeOnSurface(pocket, 0.52, 1.0, 0.035);
-  const flap = mesh(rbox(0.215, 0.06, 0.03, 2, 0.012), mats.shirtDark, bodyRig);
-  placeOnSurface(flap, 0.52, 1.075, 0.052);
-  const btn = mesh(new THREE.SphereGeometry(0.016, 10, 8), mats.wood, bodyRig);
-  placeOnSurface(btn, 0.52, 1.06, 0.075);
+  const pocket = mesh(rbox(0.22, 0.2, 0.03, 2, 0.012), mats.shirt, bodyRig);
+  placeOnSurface(pocket, 0.52, 0.99, 0.035);
+  const flap = mesh(rbox(0.235, 0.06, 0.03, 2, 0.012), mats.shirtDark, bodyRig);
+  placeOnSurface(flap, 0.52, 1.085, 0.052);
+  const btn = mesh(new THREE.SphereGeometry(0.016, 10, 8), mats.gold, bodyRig);
+  placeOnSurface(btn, 0.52, 1.07, 0.075);
+  // school emblem printed on the pocket
+  const logoTex = imageTex(256, 256, schoolLogo, (g, w, h, img) => { if (img) g.drawImage(img, 0, 0, w, h); });
+  const logo = mesh(new THREE.PlaneGeometry(0.135, 0.135), M(0xffffff, { map: logoTex, rough: 0.6, transparent: true, polyOffset: true }), pocket, false);
+  logo.position.set(0, -0.018, 0.0162);
 }
 
 // --- Rope coil on the hip
@@ -689,9 +738,9 @@ for (const side of [-1, 1]) {
     mesh(brimGeo, mats.capDark, bodyRig);
   }
 
-  const badgeTex = canvasTex(256, 256, (g, w, h) => drawEmblem(g, w / 2, h / 2, w * 0.46));
+  const badgeTex = imageTex(256, 256, gepLogo, (g, w, h, img) => drawLogoBadge(g, w / 2, h / 2, w * 0.48, img));
   const badge = mesh(
-    new THREE.CircleGeometry(0.095, seg(32, 16)),
+    new THREE.CircleGeometry(0.11, seg(32, 16)),
     M(0xffffff, { map: badgeTex, rough: 0.4, coat: 0.6, transparent: true }),
     bodyRig, false,
   );
@@ -723,8 +772,8 @@ for (const side of [-1, 1]) {
   const rollEndMat = M(0xffffff, {
     rough: 0.85,
     map: canvasTex(128, 128, (g, w, h) => { // rolled blanket spiral
-      g.fillStyle = '#c9573e'; g.fillRect(0, 0, w, h);
-      g.strokeStyle = '#f2c4a8'; g.lineWidth = 7; g.lineCap = 'round';
+      g.fillStyle = WHITE; g.fillRect(0, 0, w, h);
+      g.strokeStyle = PINK_DEEP; g.lineWidth = 7; g.lineCap = 'round';
       g.beginPath();
       for (let a = 0; a < Math.PI * 7; a += 0.1) {
         const r = 4 + a * 2.6;
@@ -787,25 +836,25 @@ let pennant, pennantBase;
   const grip = mesh(new THREE.TorusGeometry(0.07, 0.03, 6, 14), mats.hand, tilt, false);
   grip.rotation.x = Math.PI / 2; grip.position.y = 0.02; grip.scale.set(1, 1, 1.4);
 
-  const len = 0.78, hgt = 0.4, nx = seg(16, 8), ny = 4;
+  const len = 0.7, hgt = 0.38, nx = seg(16, 8), ny = 4;
   const g = new THREE.PlaneGeometry(len, hgt, nx, ny);
-  g.translate(len / 2, 0, 0);
+  g.translate(-len / 2, 0, 0); // flies outward, away from the head; hoist is at x = 0 (texture's right edge)
   const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i);
+    const x = -p.getX(i);
     p.setY(i, p.getY(i) * (1 - (x / len) * 0.92)); // taper into a pennant
   }
   pennantBase = Float32Array.from(p.array);
-  const tex = canvasTex(512, 256, (c, w, h) => {
+  const tex = imageTex(512, 256, gepLogo, (c, w, h, img) => {
     const grd = c.createLinearGradient(0, 0, w, 0);
-    grd.addColorStop(0, '#ffb02e'); grd.addColorStop(1, '#ff7b22');
+    grd.addColorStop(0, PINK_DEEP); grd.addColorStop(1, '#ffd3e2');
     c.fillStyle = grd; c.fillRect(0, 0, w, h);
     c.fillStyle = '#ffffff';
     c.fillRect(0, h * 0.06, w, h * 0.05); c.fillRect(0, h * 0.89, w, h * 0.05);
-    drawEmblem(c, h * 0.62, h / 2, h * 0.34);
+    drawLogoBadge(c, w - h * 0.6, h / 2, h * 0.37, img);
     c.fillStyle = '#ffffff';
-    for (let i = 0; i < 3; i++) { // little stars
-      const sx = h * 1.25 + i * h * 0.38, sy = h / 2, R = h * (0.09 - i * 0.017);
+    for (let i = 0; i < 3; i++) { // little stars towards the tip
+      const sx = w - h * 1.25 - i * h * 0.38, sy = h / 2, R = h * (0.09 - i * 0.017);
       c.beginPath();
       for (let k = 0; k < 10; k++) {
         const a = -Math.PI / 2 + (k * Math.PI) / 5, rr = k % 2 ? R * 0.45 : R;
@@ -816,7 +865,8 @@ let pennant, pennantBase;
   });
   pennant = mesh(g, M(0xffffff, { map: tex, rough: 0.75, sheen: 0.6, side: THREE.DoubleSide }), tilt);
   pennant.userData.dynamic = true;
-  pennant.position.set(0.02, 1.0, 0);
+  pennant.position.set(-0.02, 1.0, 0);
+  pennant.rotation.y = 0.3; // turned a little towards the viewer so the logo reads
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -912,9 +962,9 @@ function animate(dt) {
 
   // pennant ripple (tiny CPU vertex update: ~85 vertices)
   const arr = pPos.array;
-  const len = 0.78;
+  const len = 0.7;
   for (let i = 0; i < arr.length; i += 3) {
-    const x = pennantBase[i];
+    const x = -pennantBase[i];  // distance from the pole
     const k = x / len;
     arr[i + 2] = Math.sin(x * 7 - t * 6) * 0.06 * k + Math.sin(x * 3 - t * 3.3) * 0.03 * k;
     arr[i + 1] = pennantBase[i + 1] - k * k * 0.05;
@@ -959,7 +1009,7 @@ function resize() {
   // fit the mascot (≈2.5 tall, ≈2.4 wide incl. flag) for any aspect ratio
   const vFov = THREE.MathUtils.degToRad(camera.fov);
   const distV = 1.45 / Math.tan(vFov / 2);
-  const distH = 1.22 / (Math.tan(vFov / 2) * camera.aspect);
+  const distH = 1.48 / (Math.tan(vFov / 2) * camera.aspect);
   const dist = THREE.MathUtils.clamp(Math.max(distV, distH), controls.minDistance, controls.maxDistance);
   const dir = camera.position.clone().sub(controls.target);
   if (dir.lengthSq() < 1e-6) dir.set(0.32, 0.18, 1);
@@ -1134,7 +1184,11 @@ function mergeStatic(rigNode) {
     merged.receiveShadow = srcs.some((m) => m.receiveShadow);
     merged.renderOrder = srcs[0].renderOrder;
     rigNode.add(merged);
-    for (const m of srcs) { m.removeFromParent(); if (!m.isInstancedMesh) m.geometry.dispose(); }
+    for (const m of srcs) {
+      for (const c of [...m.children]) rigNode.attach(c); // keep decals etc. parented to a merged part
+      m.removeFromParent();
+      if (!m.isInstancedMesh) m.geometry.dispose();
+    }
     geos.forEach((g) => g.dispose());
   }
 }
