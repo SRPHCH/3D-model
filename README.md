@@ -48,6 +48,13 @@
 
 กด `F` หรือใส่ `?fps` เพื่อแสดง fps และความละเอียดที่ใช้อยู่
 
+## Deploy
+
+- **Render (Static Site, แนะนำ)**: New → Static Site → เลือก repo นี้ → Build command: `echo ok` → Publish directory: `.`
+  (หรือใช้ `render.yaml` ผ่าน Blueprint) ไม่มีเซิร์ฟเวอร์ให้รัน จึงไม่กิน CPU เลย
+- **Render Web Service / Railway / VPS**: `npm start` รัน `server.mjs` (ไม่มี dependency) เสิร์ฟ `index.html` แบบ gzip
+  ใช้พอร์ตจากตัวแปร `PORT` และมี health check ที่ `/healthz`
+
 ## พัฒนาต่อ
 
 ```bash

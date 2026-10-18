@@ -6,10 +6,14 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "serve": "npx --yes serve -l 8080 ."
+    "start": "node server.mjs",
+    "serve": "node server.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
     "three": "0.186.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

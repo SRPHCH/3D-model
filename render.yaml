@@ -1,0 +1,11 @@
+# Render Blueprint — static site (free, served from Render's CDN; nothing runs on a server)
+services:
+  - type: web
+    name: little-explorer
+    runtime: static
+    buildCommand: echo "index.html is prebuilt"
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=300
