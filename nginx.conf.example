@@ -1,0 +1,21 @@
+# ตัวอย่าง nginx สำหรับเซิร์ฟเวอร์ 1 vCPU — เสิร์ฟไฟล์ static อย่างเดียว ใช้ CPU แทบเป็นศูนย์
+# วางไว้ใน /etc/nginx/conf.d/mascot.conf แล้วคัดลอก index.html ไปที่ /var/www/mascot/
+server {
+    listen 80;
+    server_name _;
+    root /var/www/mascot;
+    index index.html;
+
+    # บีบอัดครั้งเดียวล่วงหน้า (gzip -k -9 index.html) แล้วให้ nginx ส่งไฟล์ .gz ตรงๆ ไม่ต้องบีบอัดทุก request
+    gzip_static on;
+    gzip on;
+    gzip_comp_level 5;
+    gzip_types text/html application/javascript text/css;
+
+    location = /index.html {
+        add_header Cache-Control "public, max-age=3600";
+    }
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

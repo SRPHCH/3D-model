@@ -1,0 +1,15 @@
+{
+  "name": "explorer-mascot-3d",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cute 3D explorer mascot rendered with three.js, built into a single self-contained index.html",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "npx --yes serve -l 8080 ."
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "three": "0.186.1"
+  }
+}
