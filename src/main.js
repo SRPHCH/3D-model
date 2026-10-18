@@ -12,40 +12,11 @@ import gepLogoUrl from './assets/gep-logo.webp';
 import schoolLogoUrl from './assets/school-logo.webp';
 
 /* ------------------------------------------------------------------------------------------
- * Quality tiers
+ * Quality: always the high-quality settings (no automatic downgrades)
  * ---------------------------------------------------------------------------------------- */
 
-const TIERS = {
-  high:   { label: 'สูง',   maxDpr: 2,    minDpr: 1,    aa: true,  shadow: 2048, fps: 60, seg: 1,    pbr: 'physical', env: true },
-  medium: { label: 'กลาง',  maxDpr: 1.5,  minDpr: 0.75, aa: true,  shadow: 1024, fps: 60, seg: 0.75, pbr: 'standard', env: true },
-  low:    { label: 'ประหยัด', maxDpr: 1,    minDpr: 0.5,  aa: false, shadow: 0,    fps: 30, seg: 0.4,  pbr: 'matcap',   env: false },
-};
-
-const params = new URLSearchParams(location.search);
-
-function detectTier() {
-  const forced = params.get('q');
-  if (TIERS[forced]) return forced;
-  let renderer = '';
-  try {
-    const c = document.createElement('canvas');
-    const gl = c.getContext('webgl2') || c.getContext('webgl');
-    if (!gl) return 'low';
-    const ext = gl.getExtension('WEBGL_debug_renderer_info');
-    renderer = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
-    gl.getExtension('WEBGL_lose_context')?.loseContext();
-  } catch { return 'low'; }
-  // No GPU (VPS / VM / remote desktop): the browser rasterises on the CPU.
-  if (/swiftshader|llvmpipe|softpipe|software|basic render|mesa offscreen/i.test(renderer)) return 'low';
-  const cores = navigator.hardwareConcurrency || 2;
-  const mem = navigator.deviceMemory || 8;
-  if (cores <= 2 || mem <= 2) return 'low';
-  if (/Android|iPhone|iPad|Mobi/i.test(navigator.userAgent) || cores <= 4 || mem <= 4) return 'medium';
-  return 'high';
-}
-
-const tierName = detectTier();
-const Q = TIERS[tierName];
+const tierName = 'high';
+const Q = { maxDpr: 2, aa: true, shadow: 2048, fps: 60, seg: 1, pbr: 'physical', env: true };
 const seg = (n, min = 6) => Math.max(min, Math.round(n * Q.seg));
 
 /* ------------------------------------------------------------------------------------------
@@ -56,7 +27,7 @@ const container = document.getElementById('app');
 const renderer = new THREE.WebGLRenderer({
   antialias: Q.aa,
   alpha: false, // opaque canvas: the browser compositor can skip blending it with the page
-  powerPreference: tierName === 'low' ? 'low-power' : 'high-performance',
+  powerPreference: 'high-performance',
   stencil: false,
 });
 renderer.setClearColor(0xffffff, 1);
@@ -980,7 +951,7 @@ function animate(dt) {
 const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 let downAt = null;
-renderer.domElement.addEventListener('pointerdown', (e) => { downAt = { x: e.clientX, y: e.clientY, t: performance.now() }; wake(); });
+renderer.domElement.addEventListener('pointerdown', (e) => { downAt = { x: e.clientX, y: e.clientY, t: performance.now() }; });
 renderer.domElement.addEventListener('pointerup', (e) => {
   if (!downAt) return;
   const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
@@ -992,17 +963,15 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   ray.setFromCamera(ndc, camera);
   if (ray.intersectObject(mascot, true).length && anim.jumpT < 0) anim.jumpT = 0;
 });
-controls.addEventListener('start', wake);
 window.addEventListener('keydown', (e) => {
-  if (e.key === ' ' && anim.jumpT < 0) { anim.jumpT = 0; wake(); }
-  if (e.key === 'f' || e.key === 'F') hud.classList.toggle('show-fps');
+  if (e.key === ' ' && anim.jumpT < 0) anim.jumpT = 0;
 });
 
 /* ------------------------------------------------------------------------------------------
  * Sizing
  * ---------------------------------------------------------------------------------------- */
 
-let dpr = Math.min(window.devicePixelRatio || 1, Q.maxDpr);
+const dpr = Math.min(window.devicePixelRatio || 1, Q.maxDpr);
 function resize() {
   const w = container.clientWidth, h = container.clientHeight;
   camera.aspect = w / h;
@@ -1022,100 +991,25 @@ window.addEventListener('resize', resize);
 resize();
 
 /* ------------------------------------------------------------------------------------------
- * Adaptive render loop
- *  - fps cap per tier, halved after 20 s without interaction (eco idle)
- *  - dynamic resolution: drops pixel ratio when frames run late, restores when there is headroom
- *  - shadows refresh every frame on 'high', every 2nd frame otherwise; switched off if still slow
- *  - stops completely while the tab is hidden
+ * Render loop: capped at 60 fps, shadows refreshed every frame, stops while the tab is hidden
  * ---------------------------------------------------------------------------------------- */
 
-const hud = document.getElementById('hud');
-const fpsEl = document.getElementById('fps');
-const qEl = document.getElementById('quality');
-let fpsCap = Q.fps;
-let lastInput = performance.now();
-let shadowsOn = Q.shadow > 0;
-function wake() { lastInput = performance.now(); }
-window.addEventListener('pointermove', wake, { passive: true });
-window.addEventListener('wheel', wake, { passive: true });
-
-const perf = { frames: 0, time: 0, windowStart: performance.now(), good: 0, cooldown: 0, drop: null, floor: Q.minDpr };
-function setDpr(v) { dpr = v; resize(); }
-function adapt(now) {
-  const span = now - perf.windowStart;
-  if (span < 1500 || perf.frames < 5) return;
-  const avg = perf.time / perf.frames;           // ms between rendered frames
-  const target = 1000 / fpsCap;
-  const fps = 1000 / avg;
-  perf.frames = 0; perf.time = 0; perf.windowStart = now;
-  fpsEl.textContent = `${fps.toFixed(0)} fps · ${dpr.toFixed(2)}x`;
-
-  // Did the last resolution drop help? On CPU-only WebGL the cost is often per frame rather
-  // than per pixel; then a lower resolution only blurs the image, so undo it and stop there.
-  if (perf.drop) {
-    const { from, fps: before } = perf.drop;
-    perf.drop = null;
-    if (fps < before * 1.12) { perf.floor = from; setDpr(from); perf.cooldown = now + 1500; return; }
-  }
-  if (now < perf.cooldown) return;
-
-  if (avg > target * 1.3) {
-    perf.good = 0;
-    perf.cooldown = now + 1500;
-    if (dpr > perf.floor + 0.01) {
-      perf.drop = { from: dpr, fps };
-      setDpr(Math.max(perf.floor, dpr - (avg > target * 2 ? 0.25 : 0.12)));
-    } else if (shadowsOn) {
-      shadowsOn = false; key.castShadow = false;
-      renderer.shadowMap.enabled = false;
-      scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; });
-    } else if (fpsCap > 30) {
-      fpsCap = 30;
-    }
-  } else if (avg < target * 1.08) {
-    const maxDpr = Math.min(window.devicePixelRatio || 1, Q.maxDpr);
-    if (++perf.good >= 3 && dpr < maxDpr - 0.01) {
-      setDpr(Math.min(maxDpr, dpr + 0.1));
-      perf.good = 0;
-      perf.cooldown = now + 3000;
-    }
-  } else perf.good = 0;
-}
-
 let lastFrame = performance.now();
-let frameNo = 0;
 function loop(now) {
   requestAnimationFrame(loop);
-  const idle = now - lastInput > 20000 && anim.jumpT < 0;
-  const cap = idle ? Math.max(20, fpsCap / 2) : fpsCap;
   const elapsed = now - lastFrame;
-  if (elapsed < 1000 / cap - 2) return;
+  if (elapsed < 1000 / Q.fps - 2) return;
   lastFrame = now;
-  if (elapsed < 250) { perf.frames++; perf.time += elapsed; }
-
   const dt = Math.min(elapsed / 1000, 1 / 20);
   controls.update(dt);
   animate(dt);
-  if (shadowsOn) renderer.shadowMap.needsUpdate = tierName === 'high' || (frameNo & 1) === 0;
+  renderer.shadowMap.needsUpdate = true;
   renderer.render(scene, camera);
-  frameNo++;
-  if (!idle) adapt(now); else { perf.frames = 0; perf.time = 0; perf.windowStart = now; }
 }
 
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) { lastFrame = performance.now(); perf.frames = 0; perf.time = 0; perf.windowStart = lastFrame; }
+  if (!document.hidden) lastFrame = performance.now();
 });
-
-qEl.textContent = `คุณภาพ: ${Q.label}`;
-for (const btn of document.querySelectorAll('[data-q]')) {
-  if (btn.dataset.q === (params.get('q') || 'auto')) btn.classList.add('on');
-  btn.addEventListener('click', () => {
-    const u = new URL(location.href);
-    if (btn.dataset.q === 'auto') u.searchParams.delete('q'); else u.searchParams.set('q', btn.dataset.q);
-    location.href = u.toString();
-  });
-}
-if (params.has('fps')) hud.classList.add('show-fps');
 
 /* ------------------------------------------------------------------------------------------
  * Merge static parts: every rig ends up with one mesh per material. ~65 draw calls → ~25.
@@ -1201,4 +1095,4 @@ renderer.compile(scene, camera);
 requestAnimationFrame((t) => { lastFrame = t; document.body.classList.add('ready'); loop(t); });
 
 // exposed for automated checks
-window.__mascot = { tier: tierName, renderer, scene, mats, camera, controls, anim, get dpr() { return dpr; }, get shadows() { return shadowsOn; } };
+window.__mascot = { tier: tierName, renderer, scene, mats, camera, controls, anim, dpr };
